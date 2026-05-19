@@ -52,7 +52,7 @@ function parseLrc(lrcContent) {
 // ──────────────────────────────────────────────
 // Build Python script via string concatenation
 // ──────────────────────────────────────────────
-function generatePythonScript(base64Audio, title, artist, parsedLyrics) {
+function generatePythonScript(base64Audio, title, artist, parsedLyrics, duration) {
   const safeTitle  = title.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   const safeArtist = artist.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   
@@ -100,6 +100,7 @@ function generatePythonScript(base64Audio, title, artist, parsedLyrics) {
     'TITLE  = "' + safeTitle + '"',
     'ARTIST = "' + safeArtist + '"',
     'LYRICS = ' + lyricsPythonList,
+    'DURATION = ' + duration,
     'AUDIO_B64 = (',
     audioLines,
     ')',
@@ -188,9 +189,9 @@ function generatePythonScript(base64Audio, title, artist, parsedLyrics) {
     '        try:',
     '            total = pygame.mixer.Sound(audio_path).get_length()',
     '            if total <= 0:',
-    '                total = 30.0',
+    '                total = DURATION',
     '        except Exception:',
-    '            total = 30.0',
+    '            total = DURATION',
     '',
     '        boot()',
     '        pygame.mixer.music.play()',
@@ -288,7 +289,8 @@ app.get('/api/search', async (req, res) => {
             title: item.name || item.title || 'Unknown Title',
             artist: { name: item.primaryArtists || item.artists || 'Unknown Artist' },
             album: { cover_medium: coverUrl },
-            preview: audioUrl,
+            preview: `/_/backend/api/stream?url=${encodeURIComponent(audioUrl)}`,
+            duration: item.duration ? parseInt(item.duration, 10) : 180,
             isFullTrack: true
           };
         });
@@ -335,11 +337,63 @@ app.get('/api/lyrics', async (req, res) => {
 });
 
 // ──────────────────────────────────────────────
+// GET /api/stream
+// Proxy audio files with full range request (206) support to prevent CORS/truncation errors
+// ──────────────────────────────────────────────
+app.get('/api/stream', async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url) {
+      return res.status(400).json({ error: 'Audio URL is required' });
+    }
+
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer': 'https://www.jiosaavn.com/'
+    };
+
+    if (req.headers.range) {
+      headers['Range'] = req.headers.range;
+    }
+
+    console.log(`[PROXY STREAM] Fetching and piping audio chunk from: ${url.substring(0, 60)}...`);
+
+    const response = await axios({
+      method: 'get',
+      url: url,
+      responseType: 'stream',
+      headers: headers,
+      timeout: 20000
+    });
+
+    res.status(response.status);
+
+    const copyHeaders = [
+      'content-type',
+      'content-length',
+      'content-range',
+      'accept-ranges'
+    ];
+
+    copyHeaders.forEach(h => {
+      if (response.headers[h]) {
+        res.setHeader(h, response.headers[h]);
+      }
+    });
+
+    response.data.pipe(res);
+  } catch (err) {
+    console.error('[STREAM PROXY ERROR]:', err.message);
+    res.status(500).json({ error: 'Failed to proxy audio stream' });
+  }
+});
+
+// ──────────────────────────────────────────────
 // POST /generate
 // ──────────────────────────────────────────────
 app.post('/generate', upload.single('lrcFile'), async (req, res) => {
   try {
-    const { title, artist, previewUrl } = req.body;
+    const { title, artist, previewUrl, duration } = req.body;
     const lrcFile = req.file;
 
     if (!title || !artist || !previewUrl) {
@@ -391,7 +445,7 @@ app.post('/generate', upload.single('lrcFile'), async (req, res) => {
     }
     
     // 3. Generate .py
-    const pythonCode = generatePythonScript(base64Audio, title, artist, parsedLyrics);
+    const pythonCode = generatePythonScript(base64Audio, title, artist, parsedLyrics, duration ? parseFloat(duration) : 180);
 
     // 4. Stream to browser as download
     const filename = 'lyricshell_' + title.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.py';

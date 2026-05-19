@@ -4,7 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function TerminalPlayer({ songInfo, lrcContent }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(30); // Fallback to 30s for Deezer preview
+  const [duration, setDuration] = useState(() => {
+    return songInfo?.duration || 30;
+  }); // Fallback to 30s for Deezer preview
   const [isBooted, setIsBooted] = useState(false);
   const [booting, setBooting] = useState(false);
   const [bootLines, setBootLines] = useState([]);
@@ -92,6 +94,9 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
     const isDeezerPreview = songInfo?.previewUrl && (songInfo.previewUrl.includes("deezer") || songInfo.previewUrl.includes("preview"));
     const defaultOffset = isDeezerPreview ? 49.0 : 0.0;
     setLyricOffset(defaultOffset);
+    
+    const defaultDuration = songInfo?.duration || 30;
+    setDuration(defaultDuration);
     
     setSysLogs([
       "[SYS] Integrated audio engine standby.",

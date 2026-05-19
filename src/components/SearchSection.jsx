@@ -271,6 +271,7 @@ export default function SearchSection({ onSelect, selectedSong }) {
                           artist: song.artist.name,
                           previewUrl: song.preview,
                           albumCover: song.album.cover_medium,
+                          duration: song.duration,
                         });
                         // Scroll down to preview section
                         setTimeout(() => {
