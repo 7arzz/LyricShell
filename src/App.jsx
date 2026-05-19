@@ -5,6 +5,7 @@ import SearchSection from "./components/SearchSection";
 import UploadSection from "./components/UploadSection";
 import TerminalPlayer from "./components/TerminalPlayer";
 import MatrixRain from "./components/MatrixRain";
+import CompilerSection from "./components/CompilerSection";
 
 export default function App() {
   const [songInfo, setSongInfo] = useState(null); // { id, title, artist, previewUrl, albumCover }
@@ -134,6 +135,21 @@ export default function App() {
                 lrcContent={lrcContent}
                 lyricsLoading={lyricsLoading}
               />
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* Section 3: Standing Compiler */}
+        <AnimatePresence>
+          {songInfo && (
+            <motion.section 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+              className="scroll-mt-20"
+            >
+              <CompilerSection songInfo={songInfo} lrcContent={lrcContent} />
             </motion.section>
           )}
         </AnimatePresence>
