@@ -105,10 +105,10 @@ export default function PreviewSection({ songInfo }) {
               <div className="font-terminal text-[10px] text-cyan-400/50 uppercase tracking-widest">
                 SIGNAL STATE: {isPlaying ? "ACTIVE" : "STANDBY"}
               </div>
-              <h3 className="font-orbitron font-bold text-lg text-slate-100 tracking-wide mt-1 truncate max-w-[280px]">
+              <h3 className="font-orbitron font-bold text-lg text-slate-100 tracking-wide mt-1 truncate max-w-full sm:max-w-[280px]">
                 {songInfo.title}
               </h3>
-              <p className="font-terminal text-sm text-purple-400 truncate max-w-[280px]">
+              <p className="font-terminal text-sm text-purple-400 truncate max-w-full sm:max-w-[280px]">
                 {songInfo.artist}
               </p>
             </div>

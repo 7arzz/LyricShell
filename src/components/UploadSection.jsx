@@ -139,7 +139,7 @@ export default function UploadSection({ onLrcUpload, onLrcClear, onLrcContentCha
                   </svg>
                 </div>
                 <div className="overflow-hidden">
-                  <p className="font-terminal text-xs text-purple-300 truncate max-w-[100px] sm:max-w-[130px]" title={lrcFile.name}>
+                  <p className="font-terminal text-xs text-purple-300 truncate max-w-[100px] xs:max-w-[180px] sm:max-w-[200px] lg:max-w-[240px]" title={lrcFile.name}>
                     {lrcFile.name}
                   </p>
                   <p className="font-terminal text-[9px] text-slate-500">

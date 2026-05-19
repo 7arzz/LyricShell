@@ -191,7 +191,7 @@ export default function SearchSection({ onSelect, selectedSong }) {
                   visible: { opacity: 1, y: 0 }
                 }}
                 key={song.id}
-                className={`relative group bg-[#070b19]/60 border rounded-xl overflow-hidden transition-colors duration-300 ${
+                className={`relative group bg-[#070b19]/60 border rounded-xl overflow-hidden transition-colors duration-300 flex flex-row sm:flex-col ${
                   isSelected
                     ? "border-cyan-400 glow-cyan bg-[#0c142c]/90"
                     : "border-slate-500/20 hover:border-cyan-500/40"
@@ -199,7 +199,7 @@ export default function SearchSection({ onSelect, selectedSong }) {
                 whileHover={!isSelected ? { scale: 1.02 } : {}}
               >
                 {/* Album Cover & Hover Play Overlay */}
-                <div className="relative aspect-square w-full bg-[#050811] overflow-hidden">
+                <div className="relative w-24 h-24 sm:w-full sm:h-auto sm:aspect-square bg-[#050811] overflow-hidden shrink-0">
                   <img
                     src={song.album.cover_medium}
                     alt={song.title}
@@ -213,16 +213,16 @@ export default function SearchSection({ onSelect, selectedSong }) {
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 backdrop-blur-xs">
                     <button
                       onClick={() => togglePlayPreview(song.preview)}
-                      className={`p-4 rounded-full transition-transform hover:scale-110 duration-200 ${
+                      className={`p-3 sm:p-4 rounded-full transition-transform hover:scale-110 duration-200 ${
                         isPlaying ? "bg-purple-600 text-white shadow-[0_0_15px_#bd00ff]" : "bg-cyan-500 text-black shadow-[0_0_15px_#00f5ff]"
                       }`}
                     >
                       {isPlaying ? (
-                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                         </svg>
                       ) : (
-                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M8 5v14l11-7z" />
                         </svg>
                       )}
@@ -231,50 +231,36 @@ export default function SearchSection({ onSelect, selectedSong }) {
 
                   {/* Playing Signal Bar indicator */}
                   {isPlaying && (
-                    <div className="absolute bottom-3 left-3 flex gap-1 items-end h-6 bg-black/75 px-3 py-1.5 rounded-full border border-purple-500/30">
-                      <div className="eq-bar h-4"></div>
-                      <div className="eq-bar h-4"></div>
-                      <div className="eq-bar h-4"></div>
-                      <span className="font-terminal text-[10px] text-purple-400 ml-1">AUDIO PLAYING</span>
+                    <div className="absolute bottom-1.5 left-1.5 sm:bottom-3 sm:left-3 flex gap-0.5 sm:gap-1 items-end h-5 sm:h-6 bg-black/75 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border border-purple-500/30">
+                      <div className="eq-bar h-3 sm:h-4"></div>
+                      <div className="eq-bar h-3 sm:h-4"></div>
+                      <div className="eq-bar h-3 sm:h-4"></div>
+                      <span className="font-terminal text-[8px] sm:text-[10px] text-purple-400 ml-1">AUDIO</span>
                     </div>
                   )}
                 </div>
 
                 {/* Details */}
-                <div className="p-4 space-y-3">
-                  <div>
-                    <h3 className="font-orbitron font-bold text-sm text-slate-100 truncate tracking-wide" title={song.title}>
+                <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between min-w-0">
+                  <div className="space-y-0.5 sm:space-y-1">
+                    <h3 className="font-orbitron font-bold text-xs sm:text-sm text-slate-100 truncate tracking-wide" title={song.title}>
                       {song.title}
                     </h3>
-                    <p className="font-terminal text-xs text-purple-400 truncate mt-0.5">
+                    <p className="font-terminal text-[10px] sm:text-xs text-purple-400 truncate">
                       {song.artist.name}
                     </p>
                   </div>
 
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex flex-row gap-1.5 sm:gap-2 pt-2">
                     <button
                       onClick={() => togglePlayPreview(song.preview)}
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md border text-xs font-terminal transition ${
+                      className={`flex-1 flex items-center justify-center gap-1 py-1 sm:py-1.5 px-2 rounded border text-[9px] sm:text-xs font-terminal transition ${
                         isPlaying
                           ? "bg-purple-950/40 text-purple-400 border-purple-500/40"
                           : "bg-cyan-950/20 text-cyan-400 border-cyan-500/30 hover:bg-cyan-950/40 hover:border-cyan-400"
                       }`}
                     >
-                      {isPlaying ? (
-                        <>
-                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                          </svg>
-                          PAUSE PREVIEW
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
-                          LISTEN SIGNAL
-                        </>
-                      )}
+                      {isPlaying ? "PAUSE" : "LISTEN"}
                     </button>
 
                     <button
@@ -297,22 +283,13 @@ export default function SearchSection({ onSelect, selectedSong }) {
                           }
                         }, 100);
                       }}
-                      className={`flex-1 py-1.5 px-3 rounded-md text-xs font-orbitron font-bold transition flex items-center justify-center gap-1 ${
+                      className={`flex-1 py-1 sm:py-1.5 px-2 rounded text-[9px] sm:text-xs font-orbitron font-bold transition flex items-center justify-center gap-0.5 ${
                         isSelected
                           ? "bg-cyan-500 text-black shadow-[0_0_12px_#00f5ff] hover:bg-cyan-400"
                           : "bg-purple-600/30 text-purple-300 border border-purple-500/40 hover:bg-purple-600/60 hover:text-white"
                       }`}
                     >
-                      {isSelected ? (
-                        <>
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                          </svg>
-                          SELECTED
-                        </>
-                      ) : (
-                        "SELECT TRACK"
-                      )}
+                      {isSelected ? "SELECTED" : "SELECT"}
                     </button>
                   </div>
                 </div>
