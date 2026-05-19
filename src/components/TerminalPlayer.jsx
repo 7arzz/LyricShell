@@ -48,7 +48,9 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
 
   // Find active lyric index
   const activeLyricIdx = React.useMemo(() => {
-    let activeIdx = -1;
+    if (parsedLyrics.length === 0) return -1;
+    // Default to the first lyric (index 0) so the spotlight highlights immediately upon loading/playing
+    let activeIdx = 0;
     for (let i = 0; i < parsedLyrics.length; i++) {
       if (currentTime >= parsedLyrics[i].time) {
         activeIdx = i;
@@ -211,27 +213,14 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
       );
     }
 
-    if (activeLyricIdx === -1) {
-      return (
-        <div className="space-y-2">
-          <div className="text-cyan-500/40 font-terminal text-center py-4 animate-pulse">
-            ♪ [ INSTRUMENTAL INTRO ]
-          </div>
-          {parsedLyrics.slice(0, 3).map((l, i) => (
-            <div key={i} className="text-slate-600 font-terminal pl-8 truncate text-xs">
-              {l.text}
-            </div>
-          ))}
-        </div>
-      );
-    }
-
+    // Always render the scrolling list for maximum visual feedback.
+    // We show the active lyric at the center, with 1 past line and up to 3 upcoming lines.
     const startIdx = Math.max(0, activeLyricIdx - 1);
     const endIdx = Math.min(parsedLyrics.length, activeLyricIdx + 4);
     const slice = parsedLyrics.slice(startIdx, endIdx);
 
     return (
-      <div className="space-y-2 flex flex-col justify-center min-h-[120px]">
+      <div className="space-y-2.5 flex flex-col justify-center min-h-[120px]">
         {slice.map((lyric, idx) => {
           const absoluteIdx = startIdx + idx;
           const isActive = absoluteIdx === activeLyricIdx;
@@ -241,11 +230,11 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
               <motion.div
                 key={absoluteIdx}
                 layoutId="activeLyricLine"
-                className="bg-green-500 text-black px-4 py-1.5 rounded-sm font-terminal font-bold text-sm shadow-[0_0_12px_rgba(34,197,94,0.4)] flex items-center relative overflow-hidden"
+                className="bg-green-500 text-black px-4 py-2 rounded font-terminal font-bold text-sm shadow-[0_0_15px_rgba(34,197,94,0.65)] flex items-center relative overflow-hidden"
               >
                 {/* Horizontal scanline over spotlight line */}
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.15)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_4px,3px_100%] pointer-events-none"></div>
-                <span className="mr-2 text-black shrink-0">▶</span>
+                <span className="mr-2 text-black shrink-0 animate-pulse">▶</span>
                 <span className="truncate">{lyric.text}</span>
               </motion.div>
             );
@@ -253,7 +242,7 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
             return (
               <div
                 key={absoluteIdx}
-                className="text-slate-500 font-terminal text-xs pl-8 truncate opacity-60 transition-all duration-300"
+                className="text-slate-400/70 font-terminal text-xs pl-8 truncate opacity-60 transition-all duration-300 hover:opacity-100 py-0.5"
               >
                 {lyric.text}
               </div>
