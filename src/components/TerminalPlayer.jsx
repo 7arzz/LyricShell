@@ -16,7 +16,9 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
   // Parse LRC or Plain Lyrics
   const parsedLyrics = React.useMemo(() => {
     if (!lrcContent) return [];
-    const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+    
+    // Highly robust and flexible LRC timestamp matcher: [mm:ss.xx], [m:ss.x], [mm:ss], [mm:ss,xx]
+    const timeRegex = /\[(\d{1,2}):(\d{2})(?:[.,](\d{1,3}))?\]/;
     const parsed = [];
     const lines = lrcContent.split("\n").map(l => l.trim()).filter(Boolean);
     
@@ -27,24 +29,42 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
         hasSynced = true;
         const mins = parseInt(match[1], 10);
         const secs = parseInt(match[2], 10);
-        const msStr = match[3];
-        const ms = msStr.length === 2 ? parseInt(msStr, 10) * 10 : parseInt(msStr, 10);
+        const msStr = match[3] || "0";
+        // Standardize to 3 digits decimal: e.g. "5" -> "500" ms, "50" -> "500" ms
+        const ms = parseInt(msStr.padEnd(3, "0"), 10);
         const totalSeconds = mins * 60 + secs + ms / 1000;
         const text = line.replace(timeRegex, "").trim();
         parsed.push({ time: totalSeconds, text });
       }
     }
     
+    let result = [];
     if (hasSynced) {
-      return parsed.sort((a, b) => a.time - b.time);
+      result = parsed.sort((a, b) => a.time - b.time);
+    } else {
+      // Plain text fallback (4s spacing)
+      result = lines.map((line, idx) => ({
+        time: idx * 4,
+        text: line
+      }));
+    }
+
+    if (result.length === 0) return [];
+
+    // --- GENIUS AUTO-SCALING FOR PREVIEW TRACKS ---
+    // If playing a short preview (e.g. 29s), but the lyric timestamps are for the full song,
+    // we scale the timestamps proportionally so the user gets to see the lyrics scroll and spotlight!
+    const maxLrcTime = result[result.length - 1].time;
+    if (maxLrcTime > duration && duration > 0) {
+      const scaleFactor = duration / maxLrcTime;
+      return result.map(item => ({
+        time: item.time * scaleFactor,
+        text: item.text
+      }));
     }
     
-    // Plain text fallback (4s spacing)
-    return lines.map((line, idx) => ({
-      time: idx * 4,
-      text: line
-    }));
-  }, [lrcContent]);
+    return result;
+  }, [lrcContent, duration]);
 
   // Find active lyric index
   const activeLyricIdx = React.useMemo(() => {
