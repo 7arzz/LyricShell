@@ -255,10 +255,39 @@ app.get('/api/search', async (req, res) => {
       return res.status(400).json({ error: 'Search query is required' });
     }
     
-    console.log(`[SAAVN SEARCH] Querying saavn.dev/api/search/songs for "${q}"`);
-    
-    // 1. Try saavn.dev full track API first
+    // 1. Try musicapi.x007.workers.dev (JioSaavn seevn engine) first
     try {
+      console.log(`[WORKERS SEARCH] Querying seevn engine on musicapi.x007.workers.dev for "${q}"`);
+      const response = await axios.get(`https://musicapi.x007.workers.dev/search`, {
+        params: { q, searchEngine: 'seevn' },
+        timeout: 8000
+      });
+      
+      const results = response.data;
+      if (results && Array.isArray(results) && results.length > 0) {
+        console.log(`[WORKERS SEARCH] Success! Mapping ${results.length} results.`);
+        const formatted = results.map(item => {
+          const coverUrl = item.image || item.albumCover || item.thumbnail || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150';
+          
+          return {
+            id: item.id || item.Id || item.ID || Math.random().toString(),
+            title: item.title || item.name || 'Unknown Title',
+            artist: { name: item.artist || item.singers || item.primaryArtists || 'Unknown Artist' },
+            album: { cover_medium: coverUrl },
+            preview: `/_/backend/api/stream?id=${item.id || item.Id || item.ID}&engine=seevn`,
+            duration: item.duration ? parseInt(item.duration, 10) : 180,
+            isFullTrack: true
+          };
+        });
+        return res.json({ data: formatted });
+      }
+    } catch (apiErr) {
+      console.error(`[WORKERS SEARCH ERROR] seevn engine failed (${apiErr.message}). Trying saavn.dev...`);
+    }
+
+    // 2. Try saavn.dev full track API next
+    try {
+      console.log(`[SAAVN SEARCH] Querying saavn.dev/api/search/songs for "${q}"`);
       const response = await axios.get(`https://saavn.dev/api/search/songs?query=${encodeURIComponent(q)}`, { timeout: 8000 });
       
       const results = response.data?.data?.results || response.data?.data || (Array.isArray(response.data) ? response.data : null);
@@ -301,7 +330,7 @@ app.get('/api/search', async (req, res) => {
       console.error(`[SAAVN SEARCH ERROR] saavn.dev query failed (${apiErr.message}). Falling back to Deezer...`);
     }
 
-    // 2. Fallback to Deezer Search API
+    // 3. Fallback to Deezer Search API
     console.log(`[SAAVN SEARCH] Fetching search results from Deezer API for "${q}"`);
     const response = await axios.get(`https://api.deezer.com/search?q=${encodeURIComponent(q)}`, { timeout: 10000 });
     res.json(response.data);
@@ -342,9 +371,31 @@ app.get('/api/lyrics', async (req, res) => {
 // ──────────────────────────────────────────────
 app.get('/api/stream', async (req, res) => {
   try {
-    const { url } = req.query;
+    let { url, id, engine } = req.query;
+    if (!url && !id) {
+      return res.status(400).json({ error: 'Audio URL or ID is required' });
+    }
+
+    // Dynamic resolution of workers ID to direct stream URL
+    if (id) {
+      const targetEngine = engine || 'seevn';
+      console.log(`[PROXY STREAM] Resolving workers ID "${id}" with engine "${targetEngine}"`);
+      try {
+        const fetchResp = await axios.get(`https://musicapi.x007.workers.dev/fetch`, {
+          params: { id, searchEngine: targetEngine },
+          timeout: 10000
+        });
+        // The worker may return the url as raw string or in an object under .url / .downloadUrl
+        url = fetchResp.data?.url || fetchResp.data?.downloadUrl || (typeof fetchResp.data === 'string' ? fetchResp.data : null);
+        console.log(`[PROXY STREAM] Successfully resolved workers ID to URL: ${url}`);
+      } catch (fetchErr) {
+        console.error(`[PROXY STREAM ERROR] Failed to resolve ID via workers API: ${fetchErr.message}`);
+        return res.status(500).json({ error: 'Failed to resolve audio stream ID' });
+      }
+    }
+
     if (!url) {
-      return res.status(400).json({ error: 'Audio URL is required' });
+      return res.status(404).json({ error: 'Audio stream URL could not be resolved' });
     }
 
     const headers = {
