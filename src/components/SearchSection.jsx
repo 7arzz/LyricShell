@@ -94,7 +94,7 @@ export default function SearchSection({ onSelect, selectedSong }) {
             <span className="text-purple-400">&gt;_</span> MUSIC SEARCH GRID
           </h2>
           <p className="text-slate-400 text-xs font-terminal mt-1">
-            QUERY DEEZER SENSOR ARRAYS FOR AVAILABLE AUDIO SIGNALS
+            QUERY SAAVN SENSOR ARRAYS FOR FULL-LENGTH HIGH-QUALITY AUDIO SIGNALS
           </p>
         </div>
 
@@ -126,7 +126,7 @@ export default function SearchSection({ onSelect, selectedSong }) {
       {loading && (
         <div className="flex flex-col items-center justify-center py-12 space-y-4">
           <div className="w-12 h-12 border-4 border-t-cyan-400 border-cyan-500/10 rounded-full animate-spin"></div>
-          <span className="font-terminal text-xs text-cyan-400 animate-pulse">CONNECTING TO MUSIC PREVIEW SUB-GRID...</span>
+          <span className="font-terminal text-xs text-cyan-400 animate-pulse">CONNECTING TO FULL-LENGTH SAAVN AUDIO GRID...</span>
         </div>
       )}
 
@@ -159,7 +159,7 @@ export default function SearchSection({ onSelect, selectedSong }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
             </svg>
           </div>
-          <p className="font-terminal text-sm text-cyan-400/80">READY TO SCAN DEEZER API</p>
+          <p className="font-terminal text-sm text-cyan-400/80">READY TO SCAN SAAVN AUDIO ARRAY</p>
           <p className="text-xs text-slate-500 font-terminal mt-1">INPUT SEARCH PARAMETERS IN CONTROL TERMINAL ABOVE</p>
         </div>
       )}

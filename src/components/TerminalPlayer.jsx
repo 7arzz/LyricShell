@@ -9,8 +9,9 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
   const [booting, setBooting] = useState(false);
   const [bootLines, setBootLines] = useState([]);
   const [lyricOffset, setLyricOffset] = useState(() => {
-    return songInfo?.previewUrl ? 49.0 : 0.0;
-  }); // Signal offset: Default to +49.0s for Deezer preview tracks, 0.0s for local uploads
+    const isDeezerPreview = songInfo?.previewUrl && (songInfo.previewUrl.includes("deezer") || songInfo.previewUrl.includes("preview"));
+    return isDeezerPreview ? 49.0 : 0.0;
+  }); // Signal offset: Default to +49.0s for Deezer preview tracks, 0.0s for local/saavn.dev full tracks
   
   const audioRef = useRef(null);
   const logContainerRef = useRef(null);
@@ -87,8 +88,9 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
     setBooting(false);
     setBootLines([]);
     
-    // Auto-detect preview vs local. Default to +49.0s offset for instant perfect sync of Deezer previews!
-    const defaultOffset = songInfo?.previewUrl ? 49.0 : 0.0;
+    // Auto-detect preview vs local. Default to +49.0s offset for instant perfect sync of Deezer previews, 0.0s for saavn.dev/local!
+    const isDeezerPreview = songInfo?.previewUrl && (songInfo.previewUrl.includes("deezer") || songInfo.previewUrl.includes("preview"));
+    const defaultOffset = isDeezerPreview ? 49.0 : 0.0;
     setLyricOffset(defaultOffset);
     
     setSysLogs([

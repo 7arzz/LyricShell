@@ -249,71 +249,63 @@ function generatePythonScript(base64Audio, title, artist, parsedLyrics) {
 // ──────────────────────────────────────────────
 app.get('/api/search', async (req, res) => {
   try {
-    const { q, engine } = req.query;
+    const { q } = req.query;
     if (!q) {
       return res.status(400).json({ error: 'Search query is required' });
     }
-
-    const searchEngine = engine || 'seevn';
-    console.log(`[PROXY SEARCH] Querying musicapi.x007.workers.dev (engine: ${searchEngine}) for "${q}"`);
     
+    console.log(`[SAAVN SEARCH] Querying saavn.dev/api/search/songs for "${q}"`);
+    
+    // 1. Try saavn.dev full track API first
     try {
-      // 1. Try x007 Workers API first
-      const response = await axios.get(`https://musicapi.x007.workers.dev/search?q=${encodeURIComponent(q)}&searchEngine=${searchEngine}`, { timeout: 3000 });
+      const response = await axios.get(`https://saavn.dev/api/search/songs?query=${encodeURIComponent(q)}`, { timeout: 8000 });
       
-      if (response.data && Array.isArray(response.data)) {
-        console.log(`[PROXY SEARCH] x007 search successful! Formatting results...`);
-        const formatted = response.data.map(item => ({
-          id: item.id || Math.random().toString(),
-          title: item.title || 'Unknown Title',
-          artist: { name: item.artist || 'Unknown Artist' },
-          album: { cover_medium: item.image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150' },
-          preview: `/_/backend/api/stream?id=${encodeURIComponent(item.id)}&engine=${searchEngine}`,
-          is320kbps: true
-        }));
+      const results = response.data?.data?.results || response.data?.data || (Array.isArray(response.data) ? response.data : null);
+      
+      if (results && Array.isArray(results)) {
+        console.log(`[SAAVN SEARCH] Success! Mapping ${results.length} full-length results.`);
+        const formatted = results.map(item => {
+          // Resolve highest quality image
+          let coverUrl = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150';
+          if (Array.isArray(item.image)) {
+            const highQualityImgObj = item.image.find(img => img.quality === '500x500') || item.image[item.image.length - 1];
+            coverUrl = highQualityImgObj?.link || highQualityImgObj?.url || coverUrl;
+          } else if (typeof item.image === 'string') {
+            coverUrl = item.image;
+          }
+
+          // Resolve highest quality download/audio URL (default to 320kbps)
+          let audioUrl = '';
+          if (Array.isArray(item.downloadUrl)) {
+            const highQualityAudioObj = item.downloadUrl.find(d => d.quality === '320kbps') || item.downloadUrl.find(d => d.quality === '160kbps') || item.downloadUrl[item.downloadUrl.length - 1];
+            audioUrl = highQualityAudioObj?.link || highQualityAudioObj?.url || '';
+          } else if (typeof item.downloadUrl === 'string') {
+            audioUrl = item.downloadUrl;
+          }
+
+          return {
+            id: item.id || Math.random().toString(),
+            title: item.name || item.title || 'Unknown Title',
+            artist: { name: item.primaryArtists || item.artists || 'Unknown Artist' },
+            album: { cover_medium: coverUrl },
+            preview: audioUrl,
+            isFullTrack: true
+          };
+        });
+        
         return res.json({ data: formatted });
       }
     } catch (apiErr) {
-      console.log(`[PROXY SEARCH INFO] musicapi.x007.workers.dev search bypassed or offline (${apiErr.message}). Falling back to Deezer...`);
+      console.error(`[SAAVN SEARCH ERROR] saavn.dev query failed (${apiErr.message}). Falling back to Deezer...`);
     }
 
     // 2. Fallback to Deezer Search API
-    console.log(`[PROXY SEARCH] Fetching search results from Deezer API for "${q}"`);
+    console.log(`[SAAVN SEARCH] Fetching search results from Deezer API for "${q}"`);
     const response = await axios.get(`https://api.deezer.com/search?q=${encodeURIComponent(q)}`, { timeout: 10000 });
     res.json(response.data);
   } catch (err) {
     console.error('[PROXY ERROR] Failed to fetch search results:', err.message);
     res.status(500).json({ error: 'Failed to fetch search results from fallback Deezer API' });
-  }
-});
-
-// ──────────────────────────────────────────────
-// GET /api/stream
-// Fetch direct 320kbps streaming link from musicapi.x007
-// ──────────────────────────────────────────────
-app.get('/api/stream', async (req, res) => {
-  try {
-    const { id, engine } = req.query;
-    if (!id) {
-      return res.status(400).json({ error: 'Song ID is required' });
-    }
-    const searchEngine = engine || 'seevn';
-    console.log(`[PROXY STREAM] Fetching direct audio stream for ID: ${id} (engine: ${searchEngine})`);
-
-    const response = await axios.get(`https://musicapi.x007.workers.dev/fetch?id=${encodeURIComponent(id)}&searchEngine=${searchEngine}`, { timeout: 10000 });
-    
-    // Resolve typical structures from music-api output (can be direct URL string or an object)
-    const streamUrl = response.data?.url || response.data?.downloadUrl || response.data?.streamUrl || (typeof response.data === 'string' ? response.data : null);
-
-    if (streamUrl && streamUrl.startsWith('http')) {
-      console.log(`[PROXY STREAM] Success. Redirecting to audio link:`, streamUrl);
-      return res.redirect(streamUrl);
-    }
-
-    throw new Error('Streaming URL not found in API response');
-  } catch (err) {
-    console.error('[PROXY STREAM ERROR]:', err.message);
-    res.status(500).json({ error: 'Failed to retrieve high quality stream link: ' + err.message });
   }
 });
 
