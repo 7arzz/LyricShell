@@ -55,7 +55,15 @@ function parseLrc(lrcContent) {
 function generatePythonScript(base64Audio, title, artist, parsedLyrics) {
   const safeTitle  = title.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   const safeArtist = artist.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  const lyricsJson = JSON.stringify(parsedLyrics || []);
+  
+  // Safely construct a Python list representation of the lyrics to avoid single/double quote escaping issues
+  const safeLyricsLines = (parsedLyrics || []).map(([time, text]) => {
+    const safeText = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    return `    [${time}, "${safeText}"]`;
+  });
+  const lyricsPythonList = safeLyricsLines.length > 0
+    ? '[\n' + safeLyricsLines.join(',\n') + '\n]'
+    : '[]';
 
   // Split the huge base64 into 76-char chunks for readability
   const chunks = base64Audio.match(/.{1,76}/g) || [base64Audio];
@@ -91,7 +99,7 @@ function generatePythonScript(base64Audio, title, artist, parsedLyrics) {
     '# ── Embedded Data ────────────────────────────────────────────────',
     'TITLE  = "' + safeTitle + '"',
     'ARTIST = "' + safeArtist + '"',
-    'LYRICS = json.loads(\'' + lyricsJson + '\')',
+    'LYRICS = ' + lyricsPythonList,
     'AUDIO_B64 = (',
     audioLines,
     ')',
