@@ -8,7 +8,9 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
   const [isBooted, setIsBooted] = useState(false);
   const [booting, setBooting] = useState(false);
   const [bootLines, setBootLines] = useState([]);
-  const [lyricOffset, setLyricOffset] = useState(0); // Signal offset to sync lyrics with Deezer chorus preview
+  const [lyricOffset, setLyricOffset] = useState(() => {
+    return songInfo?.previewUrl ? 49.0 : 0.0;
+  }); // Signal offset: Default to +49.0s for Deezer preview tracks, 0.0s for local uploads
   
   const audioRef = useRef(null);
   const logContainerRef = useRef(null);
@@ -84,8 +86,15 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
     setIsBooted(false);
     setBooting(false);
     setBootLines([]);
-    setLyricOffset(0); // Reset calibration offset when song changes!
-    setSysLogs(["[SYS] Integrated audio engine standby.", "[SYS] Signal source loaded."]);
+    
+    // Auto-detect preview vs local. Default to +49.0s offset for instant perfect sync of Deezer previews!
+    const defaultOffset = songInfo?.previewUrl ? 49.0 : 0.0;
+    setLyricOffset(defaultOffset);
+    
+    setSysLogs([
+      "[SYS] Integrated audio engine standby.",
+      `[SYS] Signal source loaded. Default calibration: ${defaultOffset >= 0 ? "+" : ""}${defaultOffset.toFixed(1)}s`
+    ]);
   }, [songInfo]);
 
   const handleShiftOffset = (amount) => {
