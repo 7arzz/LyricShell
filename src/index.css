@@ -1,0 +1,250 @@
+/* ──────────────────────────────────────────────────────────────────
+   LyricShell — Advanced Cyberpunk UI Design System
+   All styles consolidated into a single high-fidelity architecture.
+   ────────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Inter:wght@300;400;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Custom Properties ─────────────────────────────────────── */
+:root {
+  --neon-cyan:     #00f5ff;
+  --neon-purple:   #bd00ff;
+  --neon-green:    #39ff14;
+  --neon-magenta:  #ff0055;
+  --dark-950:      #02040a;
+  --dark-900:      #030712;
+  --dark-800:      #070d1e;
+  --dark-700:      #0f172a;
+  --glass:         rgba(5, 8, 22, 0.45);
+  --glass-border:  rgba(0, 245, 255, 0.15);
+  --cyber-grid:    rgba(0, 245, 255, 0.03);
+}
+
+/* ── Reset & Body Styling ───────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--dark-950);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: radial-gradient(circle at 50% 0%, var(--dark-800) 0%, var(--dark-950) 100%);
+  color: #f1f5f9;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ── High-Fidelity Cyberpunk Grid & VFX ───────────────────────── */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, var(--cyber-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--cyber-grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.8;
+}
+
+/* ── Custom Interactive Scrollbars ──────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--dark-950);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, var(--neon-purple), var(--neon-cyan));
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan);
+}
+
+/* ── Premium Glassmorphism Cards ─────────────────────────────── */
+.glass-card {
+  background: var(--glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  box-shadow: 
+    inset 0 0 20px rgba(255, 255, 255, 0.01),
+    0 12px 40px rgba(0, 0, 0, 0.6);
+  position: relative;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(0, 245, 255, 0.3);
+  box-shadow: 
+    inset 0 0 20px rgba(0, 245, 255, 0.02),
+    0 0 30px rgba(0, 245, 255, 0.05),
+    0 16px 48px rgba(0, 0, 0, 0.7);
+}
+
+/* Glass Reflection Highlight */
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 245, 255, 0.3), transparent);
+  pointer-events: none;
+}
+
+/* Cyberpunk Tech Corner Elements */
+.cyber-corners::after {
+  content: '';
+  position: absolute;
+  top: -1px; right: -1px;
+  width: 10px; height: 10px;
+  border-top: 2px solid var(--neon-cyan);
+  border-right: 2px solid var(--neon-cyan);
+  pointer-events: none;
+}
+
+.cyber-corners::before {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: -1px;
+  width: 10px; height: 10px;
+  border-bottom: 2px solid var(--neon-purple);
+  border-left: 2px solid var(--neon-purple);
+  pointer-events: none;
+}
+
+/* ── Neon Glow & Text Utility Classes ───────────────────────────── */
+.glow-cyan   { box-shadow: 0 0 20px rgba(0, 245, 255, 0.4), 0 0 45px rgba(0, 245, 255, 0.15); }
+.glow-purple { box-shadow: 0 0 20px rgba(189, 0, 255, 0.4), 0 0 45px rgba(189, 0, 255, 0.15); }
+.glow-green  { box-shadow: 0 0 20px rgba(57, 255, 20, 0.4), 0 0 45px rgba(57, 255, 20, 0.15); }
+.glow-magenta { box-shadow: 0 0 20px rgba(255, 0, 85, 0.4), 0 0 45px rgba(255, 0, 85, 0.15); }
+
+.text-neon-cyan   { color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0, 245, 255, 0.5); }
+.text-neon-purple { color: var(--neon-purple); text-shadow: 0 0 10px rgba(189, 0, 255, 0.5); }
+.text-neon-green  { color: var(--neon-green); text-shadow: 0 0 10px rgba(57, 255, 20, 0.5); }
+.text-neon-magenta { color: var(--neon-magenta); text-shadow: 0 0 10px rgba(255, 0, 85, 0.5); }
+
+/* ── Animated Shimmering Text ─────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-purple) 45%, var(--neon-magenta) 75%, var(--neon-cyan) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 5s linear infinite;
+}
+
+@keyframes shimmer {
+  to { background-position: 200% center; }
+}
+
+/* ── Authentic CRT Monitor Scanlines & Flicker ──────────────── */
+.crt::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 245, 255, 0.015) 3px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+  animation: crtFlicker 0.25s infinite;
+}
+
+@keyframes crtFlicker {
+  0% { opacity: 0.96; }
+  50% { opacity: 1; }
+  100% { opacity: 0.94; }
+}
+
+/* ── Micro-Animations ────────────────────────────────────────── */
+.blink {
+  animation: cursorBlink 1.4s step-end infinite;
+}
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Neon Cyber Button Style */
+.btn-neon {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  background: rgba(0, 245, 255, 0.02);
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.1);
+}
+
+.btn-neon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 245, 255, 0.2), rgba(189, 0, 255, 0.2));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-neon:hover::before {
+  opacity: 1;
+}
+
+.btn-neon:hover {
+  box-shadow: 0 0 30px rgba(0, 245, 255, 0.5), inset 0 0 15px rgba(0, 245, 255, 0.2);
+  transform: translateY(-2px);
+  border-color: #fff;
+  color: #fff;
+}
+
+.btn-neon:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ── Font Stack Helpers ────────────────────────────────────────── */
+.font-terminal { font-family: 'Share Tech Mono', monospace; }
+.font-orbitron  { font-family: 'Orbitron', sans-serif; }
+
+/* ── Matrix canvas ──────────────────────────────────────────────── */
+#matrix-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.05;
+}
