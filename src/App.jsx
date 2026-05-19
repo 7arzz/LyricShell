@@ -3,20 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import Hero from "./components/Hero";
 import SearchSection from "./components/SearchSection";
 import UploadSection from "./components/UploadSection";
-import PreviewSection from "./components/PreviewSection";
-import GenerateButton from "./components/GenerateButton";
-import DownloadSection from "./components/DownloadSection";
-import TerminalPreview from "./components/TerminalPreview";
+import TerminalPlayer from "./components/TerminalPlayer";
 import MatrixRain from "./components/MatrixRain";
 
 export default function App() {
   const [songInfo, setSongInfo] = useState(null); // { id, title, artist, previewUrl, albumCover }
   const [lrcFile, setLrcFile] = useState(null);
   const [lrcContent, setLrcContent] = useState("");
-  const [downloadUrl, setDownloadUrl] = useState("");
-  const [fileName, setFileName] = useState("");
-  const [generating, setGenerating] = useState(false);
-  const [showTerminal, setShowTerminal] = useState(false);
   const [lyricsLoading, setLyricsLoading] = useState(false);
 
   useEffect(() => {
@@ -75,47 +68,6 @@ export default function App() {
     setLrcContent("");
   };
 
-  const handleGenerate = async () => {
-    if (!songInfo) return;
-    setGenerating(true);
-    setShowTerminal(false);
-    setDownloadUrl("");
-
-    // Prepare payload. Using multipart form-data to send optional LRC file easily.
-    const formData = new FormData();
-    formData.append("title", songInfo.title);
-    formData.append("artist", songInfo.artist);
-    formData.append("previewUrl", songInfo.previewUrl);
-    
-    if (lrcFile && lrcFile instanceof File) {
-      formData.append("lrcFile", lrcFile);
-    } else if (lrcContent) {
-      formData.append("lrcContent", lrcContent);
-    }
-
-    try {
-      const resp = await fetch(`/_/backend/generate`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!resp.ok) {
-        throw new Error("Generation failed");
-      }
-
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      setDownloadUrl(url);
-      setFileName(`lyricshell_${songInfo.title.toLowerCase().replace(/[^a-z0-9]+/g, "_")}.py`);
-      setShowTerminal(true);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to generate Python LyricShell player. Please make sure the backend is running.");
-    } finally {
-      setGenerating(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#030712] text-slate-100 flex flex-col relative crt overflow-x-hidden selection:bg-cyan-500 selection:text-black">
       {/* Background VFX */}
@@ -145,7 +97,7 @@ export default function App() {
             </span>
           </div>
           <div className="font-terminal text-xs text-cyan-400/70 tracking-widest hidden sm:block">
-            STATUS: SYSTEM_ACTIVE // PORT: 4000
+            STATUS: SYSTEM_ACTIVE // CLIENT_MODE
           </div>
         </div>
       </header>
@@ -160,7 +112,7 @@ export default function App() {
           <SearchSection onSelect={setSongInfo} selectedSong={songInfo} />
         </section>
 
-        {/* Section 2: Song Preview & LRC Upload */}
+        {/* Section 2: Interactive Terminal Music Player & LRC Upload */}
         <AnimatePresence>
           {songInfo && (
             <motion.section 
@@ -170,7 +122,10 @@ export default function App() {
               transition={{ duration: 0.5, ease: "easeOut" }}
               className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start scroll-mt-20"
             >
-              <PreviewSection songInfo={songInfo} />
+              {/* Left Column: Interactive Terminal Player */}
+              <TerminalPlayer songInfo={songInfo} lrcContent={lrcContent} />
+              
+              {/* Right Column: Lyric Editor & Settings */}
               <UploadSection 
                 onLrcUpload={handleLrcUpload} 
                 onLrcClear={handleLrcClear}
@@ -183,44 +138,6 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* Section 3: Generate Button */}
-        <AnimatePresence>
-          {songInfo && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="flex flex-col items-center justify-center py-6 scroll-mt-20"
-            >
-              <GenerateButton 
-                disabled={generating} 
-                generating={generating}
-                onClick={handleGenerate} 
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Section 4: Result & Live Simulated Terminal */}
-        <AnimatePresence>
-          {(showTerminal || downloadUrl) && (
-            <motion.section 
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
-              className="grid grid-cols-1 md:grid-cols-5 gap-8 items-start scroll-mt-20"
-            >
-              <div className="md:col-span-3">
-                <TerminalPreview songInfo={songInfo} lrcContent={lrcContent} />
-              </div>
-              <div className="md:col-span-2">
-                <DownloadSection url={downloadUrl} fileName={fileName} />
-              </div>
-            </motion.section>
-          )}
-        </AnimatePresence>
-
       </main>
 
       <footer className="border-t border-purple-500/10 py-8 bg-[#0a0f1e]/40 backdrop-blur-sm relative z-10">
@@ -229,7 +146,7 @@ export default function App() {
             [ LYRICSHELL PROJ ] INITIALIZED BY GOOGLE DEEPMIND TEAM
           </div>
           <div className="font-terminal text-xs text-purple-400/50">
-            pygame • rich • colorama • base64 • express • react
+            react • tailwindcss • framer-motion • html5 audio • express
           </div>
         </div>
       </footer>
