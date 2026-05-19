@@ -239,6 +239,31 @@ app.get('/api/search', async (req, res) => {
 });
 
 // ──────────────────────────────────────────────
+// GET /api/lyrics
+// Proxy LRCLIB searches to avoid CORS issues
+// ──────────────────────────────────────────────
+app.get('/api/lyrics', async (req, res) => {
+  try {
+    const { title, artist } = req.query;
+    if (!title || !artist) {
+      return res.status(400).json({ error: 'Title and artist are required' });
+    }
+    console.log(`[PROXY LYRICS] Fetching lyrics for: "${title} - ${artist}"`);
+    const response = await axios.get(`https://lrclib.net/api/get`, {
+      params: {
+        artist_name: artist,
+        track_name: title
+      },
+      timeout: 10000
+    });
+    res.json(response.data);
+  } catch (err) {
+    console.error('[PROXY LYRICS ERROR] Failed to fetch lyrics:', err.message);
+    res.status(404).json({ error: 'No lyrics found for this track' });
+  }
+});
+
+// ──────────────────────────────────────────────
 // POST /generate
 // ──────────────────────────────────────────────
 app.post('/generate', upload.single('lrcFile'), async (req, res) => {

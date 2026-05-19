@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Hero from "./components/Hero";
 import SearchSection from "./components/SearchSection";
@@ -17,6 +17,40 @@ export default function App() {
   const [fileName, setFileName] = useState("");
   const [generating, setGenerating] = useState(false);
   const [showTerminal, setShowTerminal] = useState(false);
+  const [lyricsLoading, setLyricsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!songInfo) {
+      setLrcFile(null);
+      setLrcContent("");
+      return;
+    }
+
+    const fetchLyrics = async () => {
+      setLyricsLoading(true);
+      setLrcFile(null);
+      setLrcContent("");
+      try {
+        const resp = await fetch(`/_/backend/api/lyrics?title=${encodeURIComponent(songInfo.title)}&artist=${encodeURIComponent(songInfo.artist)}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.syncedLyrics) {
+            setLrcContent(data.syncedLyrics);
+            setLrcFile({ name: "auto_synced_lyrics.lrc", size: data.syncedLyrics.length });
+          } else if (data.plainLyrics) {
+            setLrcContent(data.plainLyrics);
+            setLrcFile({ name: "auto_plain_lyrics.lrc", size: data.plainLyrics.length });
+          }
+        }
+      } catch (err) {
+        console.error("Error auto-fetching lyrics:", err);
+      } finally {
+        setLyricsLoading(false);
+      }
+    };
+
+    fetchLyrics();
+  }, [songInfo]);
 
   const handleLrcUpload = (file) => {
     setLrcFile(file);
@@ -25,6 +59,15 @@ export default function App() {
       setLrcContent(e.target.result);
     };
     reader.readAsText(file);
+  };
+
+  const handleLrcContentChange = (content) => {
+    setLrcContent(content);
+    if (!lrcFile) {
+      setLrcFile({ name: "edited_signal.lrc", size: content.length });
+    } else if (!(lrcFile instanceof File)) {
+      setLrcFile({ ...lrcFile, size: content.length });
+    }
   };
 
   const handleLrcClear = () => {
@@ -43,8 +86,11 @@ export default function App() {
     formData.append("title", songInfo.title);
     formData.append("artist", songInfo.artist);
     formData.append("previewUrl", songInfo.previewUrl);
-    if (lrcFile) {
+    
+    if (lrcFile && lrcFile instanceof File) {
       formData.append("lrcFile", lrcFile);
+    } else if (lrcContent) {
+      formData.append("lrcContent", lrcContent);
     }
 
     try {
@@ -128,8 +174,10 @@ export default function App() {
               <UploadSection 
                 onLrcUpload={handleLrcUpload} 
                 onLrcClear={handleLrcClear}
+                onLrcContentChange={handleLrcContentChange}
                 lrcFile={lrcFile} 
-                lrcContent={lrcContent} 
+                lrcContent={lrcContent}
+                lyricsLoading={lyricsLoading}
               />
             </motion.section>
           )}
