@@ -1,32 +1,29 @@
 import axios from 'axios';
 
 async function test() {
-  try {
-    console.log("=== Testing musicapi.x007.workers.dev search ===");
-    // The engines are gaama, seevn, hunjama, mtmusic, wunk
-    const engines = ['seevn', 'gaama', 'hunjama', 'mtmusic', 'wunk'];
-    for (const engine of engines) {
-      try {
-        console.log(`Trying engine: ${engine}...`);
-        const searchResp = await axios.get(`https://musicapi.x007.workers.dev/search?q=shape+of+you&searchEngine=${engine}`, { timeout: 5000 });
-        console.log(`Engine ${engine} results:`, Array.isArray(searchResp.data) ? searchResp.data.slice(0, 2) : searchResp.data);
-        
-        // If we got an ID, let's try /fetch
-        const results = searchResp.data;
-        const firstItem = Array.isArray(results) ? results[0] : (results?.data?.[0] || results?.results?.[0]);
-        const id = firstItem?.id || firstItem?.Id || firstItem?.ID;
-        if (id) {
-          console.log(`Found ID: ${id}, fetching download URL...`);
-          const fetchResp = await axios.get(`https://musicapi.x007.workers.dev/fetch?id=${id}`, { timeout: 5000 });
-          console.log("Fetch response:", fetchResp.data);
-          break;
-        }
-      } catch (err) {
-        console.log(`Engine ${engine} failed:`, err.message);
+  const customUrls = [
+    'https://jiosaavn-api-sumitkolhe.vercel.app',
+    'https://jiosaavn-api-ashutosh.vercel.app',
+    'https://jiosaavn-api-one.vercel.app',
+    'https://jiosaavn-api.vercel.app',
+    'https://jiosaavnapi.vercel.app',
+    'https://saavn-api.vercel.app',
+    'https://jiosaavn-api-v2.vercel.app'
+  ];
+
+  for (const url of customUrls) {
+    console.log(`Testing: ${url}`);
+    try {
+      const res = await axios.get(`${url}/api/search/songs?query=perfect`, { timeout: 4000 });
+      console.log(`-> Status:`, res.status);
+      const data = res.data?.data?.results || res.data?.data || res.data;
+      if (data && data.length > 0) {
+        console.log(`-> SUCCESS! Found working URL: ${url}`);
+        break;
       }
+    } catch (err) {
+      console.log(`-> Failed:`, err.message);
     }
-  } catch (err) {
-    console.error("General error:", err.message);
   }
 }
 

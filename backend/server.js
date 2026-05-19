@@ -285,15 +285,15 @@ app.get('/api/search', async (req, res) => {
       console.error(`[WORKERS SEARCH ERROR] seevn engine failed (${apiErr.message}). Trying saavn.dev...`);
     }
 
-    // 2. Try saavn.dev full track API next
+    // 2. Try jiosaavn-api-hemant full track API next (via working Vercel deployment)
     try {
-      console.log(`[SAAVN SEARCH] Querying saavn.dev/api/search/songs for "${q}"`);
-      const response = await axios.get(`https://saavn.dev/api/search/songs?query=${encodeURIComponent(q)}`, { timeout: 8000 });
+      console.log(`[JIOSAAVN SEARCH] Querying jiosaavn-api-hemant.vercel.app for "${q}"`);
+      const response = await axios.get(`https://jiosaavn-api-hemant.vercel.app/search/songs?q=${encodeURIComponent(q)}&camel=true`, { timeout: 8000 });
       
       const results = response.data?.data?.results || response.data?.data || (Array.isArray(response.data) ? response.data : null);
       
       if (results && Array.isArray(results)) {
-        console.log(`[SAAVN SEARCH] Success! Mapping ${results.length} full-length results.`);
+        console.log(`[JIOSAAVN SEARCH] Success! Mapping ${results.length} full-length results.`);
         const formatted = results.map(item => {
           // Resolve highest quality image
           let coverUrl = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150';
@@ -313,10 +313,20 @@ app.get('/api/search', async (req, res) => {
             audioUrl = item.downloadUrl;
           }
 
+          // Resolve artist name robustly (handling artistMap structure as well)
+          let artistName = 'Unknown Artist';
+          if (item.artistMap?.primaryArtists && Array.isArray(item.artistMap.primaryArtists) && item.artistMap.primaryArtists.length > 0) {
+            artistName = item.artistMap.primaryArtists.map(a => a.name).join(', ');
+          } else if (item.primaryArtists) {
+            artistName = Array.isArray(item.primaryArtists) ? item.primaryArtists.map(a => typeof a === 'string' ? a : a.name).join(', ') : item.primaryArtists;
+          } else if (item.artists) {
+            artistName = Array.isArray(item.artists) ? item.artists.map(a => typeof a === 'string' ? a : a.name).join(', ') : item.artists;
+          }
+
           return {
             id: item.id || Math.random().toString(),
             title: item.name || item.title || 'Unknown Title',
-            artist: { name: item.primaryArtists || item.artists || 'Unknown Artist' },
+            artist: { name: artistName },
             album: { cover_medium: coverUrl },
             preview: `/_/backend/api/stream?url=${encodeURIComponent(audioUrl)}`,
             duration: item.duration ? parseInt(item.duration, 10) : 180,
@@ -327,7 +337,7 @@ app.get('/api/search', async (req, res) => {
         return res.json({ data: formatted });
       }
     } catch (apiErr) {
-      console.error(`[SAAVN SEARCH ERROR] saavn.dev query failed (${apiErr.message}). Falling back to Deezer...`);
+      console.error(`[JIOSAAVN SEARCH ERROR] query failed (${apiErr.message}). Falling back to Deezer...`);
     }
 
     // 3. Fallback to Deezer Search API
