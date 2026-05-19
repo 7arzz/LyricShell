@@ -250,7 +250,7 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
     const slice = parsedLyrics.slice(startIdx, endIdx);
 
     return (
-      <div className="space-y-2.5 flex flex-col justify-center min-h-[120px]">
+      <div className="space-y-3 flex flex-col justify-center min-h-[120px] py-1">
         {slice.map((lyric, idx) => {
           const absoluteIdx = startIdx + idx;
           const isActive = absoluteIdx === activeLyricIdx;
@@ -260,19 +260,19 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
               <motion.div
                 key={absoluteIdx}
                 layoutId="activeLyricLine"
-                className="bg-green-500 text-black px-4 py-2 rounded font-terminal font-bold text-sm shadow-[0_0_15px_rgba(34,197,94,0.65)] flex items-center relative overflow-hidden"
+                className="bg-green-500 text-black px-3.5 py-2 rounded font-terminal font-bold text-xs sm:text-sm shadow-[0_0_15px_rgba(34,197,94,0.65)] flex items-start gap-1.5 relative overflow-hidden"
               >
                 {/* Horizontal scanline over spotlight line */}
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.15)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_4px,3px_100%] pointer-events-none"></div>
-                <span className="mr-2 text-black shrink-0 animate-pulse">▶</span>
-                <span className="truncate">{lyric.text}</span>
+                <span className="text-black shrink-0 animate-pulse mt-0.5 select-none">▶</span>
+                <span className="whitespace-normal break-words flex-1 leading-snug">{lyric.text}</span>
               </motion.div>
             );
           } else {
             return (
               <div
                 key={absoluteIdx}
-                className="text-slate-400/70 font-terminal text-xs pl-8 truncate opacity-60 transition-all duration-300 hover:opacity-100 py-0.5"
+                className="text-slate-400/70 font-terminal text-[11px] sm:text-xs pl-6 sm:pl-8 whitespace-normal break-words opacity-60 transition-all duration-300 hover:opacity-100 py-0.5 leading-snug"
               >
                 {lyric.text}
               </div>
@@ -430,12 +430,12 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
               </div>
 
               {/* Signal Calibration Subpanel (Hacking Terminal Theme) */}
-              <div className="flex items-center justify-between bg-[#050811]/60 px-3 py-1.5 rounded border border-purple-500/10 text-[10px] font-mono">
-                <div className="text-purple-400 font-bold uppercase tracking-wider flex items-center gap-1.5 select-none">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0 bg-[#050811]/60 px-3 py-2 sm:py-1.5 rounded border border-purple-500/10 text-[10px] font-mono">
+                <div className="text-purple-400 font-bold uppercase tracking-wider flex items-center gap-1.5 select-none w-full sm:w-auto justify-center sm:justify-start">
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping shrink-0"></span>
-                  SIGNAL_CALIBRATION:
+                  <span>SIGNAL CALIBRATION:</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-center gap-1 sm:gap-1.5 flex-wrap">
                   <button
                     onClick={() => handleShiftOffset(-10)}
                     className="px-1.5 py-0.5 rounded border border-purple-500/30 bg-purple-950/20 text-purple-300 hover:bg-purple-950/40 hover:text-white transition-all active:scale-95 text-[9px] font-bold"
@@ -450,7 +450,7 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
                   >
                     -1s
                   </button>
-                  <span className="px-2 py-0.5 bg-black rounded text-cyan-400 font-bold tracking-wide border border-cyan-500/20 min-w-[55px] text-center shadow-[inset_0_0_6px_rgba(0,245,255,0.1)]">
+                  <span className="px-2 py-0.5 bg-black rounded text-cyan-400 font-bold tracking-wide border border-cyan-500/20 min-w-[50px] sm:min-w-[55px] text-center shadow-[inset_0_0_6px_rgba(0,245,255,0.1)]">
                     {lyricOffset >= 0 ? "+" : ""}{lyricOffset.toFixed(1)}s
                   </span>
                   <button
