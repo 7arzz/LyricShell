@@ -249,15 +249,71 @@ function generatePythonScript(base64Audio, title, artist, parsedLyrics) {
 // ──────────────────────────────────────────────
 app.get('/api/search', async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, engine } = req.query;
     if (!q) {
       return res.status(400).json({ error: 'Search query is required' });
     }
+
+    const searchEngine = engine || 'seevn';
+    console.log(`[PROXY SEARCH] Querying musicapi.x007.workers.dev (engine: ${searchEngine}) for "${q}"`);
+    
+    try {
+      // 1. Try x007 Workers API first
+      const response = await axios.get(`https://musicapi.x007.workers.dev/search?q=${encodeURIComponent(q)}&searchEngine=${searchEngine}`, { timeout: 3000 });
+      
+      if (response.data && Array.isArray(response.data)) {
+        console.log(`[PROXY SEARCH] x007 search successful! Formatting results...`);
+        const formatted = response.data.map(item => ({
+          id: item.id || Math.random().toString(),
+          title: item.title || 'Unknown Title',
+          artist: { name: item.artist || 'Unknown Artist' },
+          album: { cover_medium: item.image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150' },
+          preview: `/_/backend/api/stream?id=${encodeURIComponent(item.id)}&engine=${searchEngine}`,
+          is320kbps: true
+        }));
+        return res.json({ data: formatted });
+      }
+    } catch (apiErr) {
+      console.log(`[PROXY SEARCH INFO] musicapi.x007.workers.dev search bypassed or offline (${apiErr.message}). Falling back to Deezer...`);
+    }
+
+    // 2. Fallback to Deezer Search API
+    console.log(`[PROXY SEARCH] Fetching search results from Deezer API for "${q}"`);
     const response = await axios.get(`https://api.deezer.com/search?q=${encodeURIComponent(q)}`, { timeout: 10000 });
     res.json(response.data);
   } catch (err) {
     console.error('[PROXY ERROR] Failed to fetch search results:', err.message);
-    res.status(500).json({ error: 'Failed to fetch search results from Deezer' });
+    res.status(500).json({ error: 'Failed to fetch search results from fallback Deezer API' });
+  }
+});
+
+// ──────────────────────────────────────────────
+// GET /api/stream
+// Fetch direct 320kbps streaming link from musicapi.x007
+// ──────────────────────────────────────────────
+app.get('/api/stream', async (req, res) => {
+  try {
+    const { id, engine } = req.query;
+    if (!id) {
+      return res.status(400).json({ error: 'Song ID is required' });
+    }
+    const searchEngine = engine || 'seevn';
+    console.log(`[PROXY STREAM] Fetching direct audio stream for ID: ${id} (engine: ${searchEngine})`);
+
+    const response = await axios.get(`https://musicapi.x007.workers.dev/fetch?id=${encodeURIComponent(id)}&searchEngine=${searchEngine}`, { timeout: 10000 });
+    
+    // Resolve typical structures from music-api output (can be direct URL string or an object)
+    const streamUrl = response.data?.url || response.data?.downloadUrl || response.data?.streamUrl || (typeof response.data === 'string' ? response.data : null);
+
+    if (streamUrl && streamUrl.startsWith('http')) {
+      console.log(`[PROXY STREAM] Success. Redirecting to audio link:`, streamUrl);
+      return res.redirect(streamUrl);
+    }
+
+    throw new Error('Streaming URL not found in API response');
+  } catch (err) {
+    console.error('[PROXY STREAM ERROR]:', err.message);
+    res.status(500).json({ error: 'Failed to retrieve high quality stream link: ' + err.message });
   }
 });
 
@@ -299,7 +355,15 @@ app.post('/generate', upload.single('lrcFile'), async (req, res) => {
     }
     
     // 1. Download preview MP3 → Base64
-    const audioResp = await axios.get(previewUrl, { responseType: 'arraybuffer', timeout: 15000 });
+    let targetAudioUrl = previewUrl;
+    if (previewUrl.startsWith('/_/backend')) {
+      targetAudioUrl = `http://localhost:${PORT}${previewUrl.replace('/_/backend', '')}`;
+    } else if (previewUrl.startsWith('/')) {
+      targetAudioUrl = `http://localhost:${PORT}${previewUrl}`;
+    }
+
+    console.log(`[GENERATE] Downloading audio stream from:`, targetAudioUrl);
+    const audioResp = await axios.get(targetAudioUrl, { responseType: 'arraybuffer', timeout: 15000 });
     const base64Audio = Buffer.from(audioResp.data).toString('base64');
 
     // 2. Parse LRC
