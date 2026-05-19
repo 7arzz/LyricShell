@@ -240,48 +240,101 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
     return "■".repeat(filledBars) + "□".repeat(emptyBars);
   };
 
-  // Render lyric lines around active line
+  // Generate random hex string for hacker effect
+  const makeHexAddr = (seed) => {
+    const base = (seed * 0x1337 + 0xDEAD) & 0xFFFF;
+    return `0x${base.toString(16).padStart(4, '0').toUpperCase()}`;
+  };
+
+  // Render lyric lines around active line — HACKER TERMINAL STYLE
   const renderLyricsList = () => {
     if (parsedLyrics.length === 0) {
       return (
-        <div className="text-cyan-500/40 text-center py-8 font-terminal text-xs uppercase tracking-wider animate-pulse">
-          ♪  [LYRICS OFFLINE] No LRC file was uploaded  ♪
+        <div className="flex flex-col items-center justify-center py-8 space-y-2">
+          <div className="text-green-500/30 text-[10px] font-mono uppercase tracking-widest animate-pulse">
+            ► [STREAM_NULL] :: LYRIC_BUFFER EMPTY
+          </div>
+          <div className="text-green-500/20 text-[9px] font-mono">
+            ERR :: No LRC payload detected. Upload .lrc to resume.
+          </div>
+          <div className="flex gap-1 mt-1">
+            {Array.from({length: 8}).map((_, i) => (
+              <div key={i} className="w-1 h-1 rounded-full bg-green-500/20 animate-pulse" style={{animationDelay: `${i * 0.15}s`}} />
+            ))}
+          </div>
         </div>
       );
     }
 
-    // Always render the scrolling list for maximum visual feedback.
-    // We show the active lyric at the center, with 1 past line and up to 3 upcoming lines.
     const startIdx = Math.max(0, activeLyricIdx - 1);
     const endIdx = Math.min(parsedLyrics.length, activeLyricIdx + 4);
     const slice = parsedLyrics.slice(startIdx, endIdx);
 
     return (
-      <div className="space-y-3 flex flex-col justify-center min-h-[120px] py-1">
+      <div className="space-y-2 flex flex-col justify-center min-h-[120px] py-1 font-mono">
         {slice.map((lyric, idx) => {
           const absoluteIdx = startIdx + idx;
           const isActive = absoluteIdx === activeLyricIdx;
-          
+          const hexAddr = makeHexAddr(absoluteIdx);
+
           if (isActive) {
             return (
               <motion.div
                 key={absoluteIdx}
                 layoutId="activeLyricLine"
-                className="bg-green-500 text-black px-3.5 py-2 rounded font-terminal font-bold text-xs sm:text-sm shadow-[0_0_15px_rgba(34,197,94,0.65)] flex items-start gap-1.5 relative overflow-hidden"
+                initial={{ opacity: 0, x: -4 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="relative overflow-hidden"
               >
-                {/* Horizontal scanline over spotlight line */}
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.15)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_4px,3px_100%] pointer-events-none"></div>
-                <span className="text-black shrink-0 animate-pulse mt-0.5 select-none">▶</span>
-                <span className="whitespace-normal break-words flex-1 leading-snug">{lyric.text}</span>
+                {/* Scanline overlay */}
+                <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,0.08)_2px,rgba(0,0,0,0.08)_4px)] pointer-events-none z-10" />
+                {/* Glitch offset layers */}
+                <div
+                  className="absolute inset-0 text-green-400/20 text-xs font-mono px-3 py-2 select-none pointer-events-none z-0 flex items-center"
+                  style={{ transform: 'translateX(2px)', clipPath: 'inset(30% 0 40% 0)' }}
+                  aria-hidden
+                >
+                  {lyric.text}
+                </div>
+                <div
+                  className="absolute inset-0 text-cyan-400/15 text-xs font-mono px-3 py-2 select-none pointer-events-none z-0 flex items-center"
+                  style={{ transform: 'translateX(-2px)', clipPath: 'inset(60% 0 10% 0)' }}
+                  aria-hidden
+                >
+                  {lyric.text}
+                </div>
+
+                {/* Main active lyric row */}
+                <div className="relative z-20 bg-black/80 border border-green-400 shadow-[0_0_18px_rgba(74,222,128,0.5),inset_0_0_8px_rgba(74,222,128,0.05)] px-3 py-2 flex items-start gap-2 rounded-sm">
+                  {/* Blinking cursor prompt */}
+                  <span className="text-green-400 text-xs shrink-0 mt-0.5 select-none font-bold animate-pulse">▌</span>
+                  {/* Hex address */}
+                  <span className="text-green-500/60 text-[9px] shrink-0 mt-0.5 select-none tabular-nums">{hexAddr}:</span>
+                  {/* Lyric text with phosphor glow */}
+                  <span className="text-green-300 text-xs sm:text-sm font-bold tracking-wide leading-snug whitespace-normal break-words flex-1 drop-shadow-[0_0_6px_rgba(74,222,128,0.8)]">
+                    {lyric.text}
+                  </span>
+                  {/* Status tag */}
+                  <span className="text-green-500/50 text-[8px] shrink-0 mt-1 select-none uppercase tracking-widest hidden sm:block">ACTIVE</span>
+                </div>
               </motion.div>
             );
           } else {
+            const isPast = absoluteIdx < activeLyricIdx;
             return (
               <div
                 key={absoluteIdx}
-                className="text-slate-400/70 font-terminal text-[11px] sm:text-xs pl-6 sm:pl-8 whitespace-normal break-words opacity-60 transition-all duration-300 hover:opacity-100 py-0.5 leading-snug"
+                className={`flex items-start gap-2 px-3 py-0.5 rounded-sm transition-all duration-300 text-[10px] sm:text-[11px] leading-snug whitespace-normal break-words
+                  ${isPast
+                    ? 'text-green-900/80 hover:text-green-700/60'
+                    : 'text-green-600/50 hover:text-green-500/70'
+                  }`}
               >
-                {lyric.text}
+                <span className="text-green-800/40 text-[9px] shrink-0 mt-0.5 tabular-nums select-none">{hexAddr}:</span>
+                <span className={`flex-1 font-mono ${isPast ? 'line-through decoration-green-900/40' : ''}`}>
+                  {lyric.text}
+                </span>
+                {isPast && <span className="text-green-900/30 text-[8px] shrink-0 mt-0.5 select-none hidden sm:block">EXEC</span>}
               </div>
             );
           }
