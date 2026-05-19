@@ -6,13 +6,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': {
+      '/_/backend': {
         target: 'http://localhost:4000',
         changeOrigin: true,
-      },
-      '/generate': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/_\/backend/, ''),
       },
     },
   },

@@ -22,7 +22,7 @@ app.use((req, res, next) => {
 // Multer memory storage for optional LRC files
 const upload = multer({ storage: multer.memoryStorage() });
 
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
 // ──────────────────────────────────────────────
 // Parse LRC → [[seconds, text], ...]
@@ -301,12 +301,10 @@ app.post('/generate', upload.single('lrcFile'), async (req, res) => {
   }
 });
 
-if (!process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log('===================================================');
-    console.log(`LYRICSHELL BACKEND LISTENING ON http://localhost:${PORT}`);
-    console.log('===================================================');
-  });
-}
+app.listen(PORT, () => {
+  console.log('===================================================');
+  console.log(`LYRICSHELL BACKEND LISTENING ON http://localhost:${PORT}`);
+  console.log('===================================================');
+});
 
 export default app;

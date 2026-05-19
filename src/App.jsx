@@ -48,7 +48,7 @@ export default function App() {
     }
 
     try {
-      const resp = await fetch("/generate", {
+      const resp = await fetch(`/_/backend/generate`, {
         method: "POST",
         body: formData,
       });
