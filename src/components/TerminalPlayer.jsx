@@ -8,6 +8,7 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
   const [isBooted, setIsBooted] = useState(false);
   const [booting, setBooting] = useState(false);
   const [bootLines, setBootLines] = useState([]);
+  const [lyricOffset, setLyricOffset] = useState(0); // Signal offset to sync lyrics with Deezer chorus preview
   
   const audioRef = useRef(null);
   const logContainerRef = useRef(null);
@@ -49,37 +50,28 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
       }));
     }
 
-    if (result.length === 0) return [];
-
-    // --- GENIUS AUTO-SCALING FOR PREVIEW TRACKS ---
-    // If playing a short preview (e.g. 29s), but the lyric timestamps are for the full song,
-    // we scale the timestamps proportionally so the user gets to see the lyrics scroll and spotlight!
-    const maxLrcTime = result[result.length - 1].time;
-    if (maxLrcTime > duration && duration > 0) {
-      const scaleFactor = duration / maxLrcTime;
-      return result.map(item => ({
-        time: item.time * scaleFactor,
-        text: item.text
-      }));
-    }
-    
+    // Keep normal 1x speed to sync perfectly with the singer.
+    // Sync issues with chorus previews are handled beautifully via manual calibration.
     return result;
-  }, [lrcContent, duration]);
+  }, [lrcContent]);
 
-  // Find active lyric index
+  // Find active lyric index based on calibrated timeline offset
   const activeLyricIdx = React.useMemo(() => {
     if (parsedLyrics.length === 0) return -1;
-    // Default to the first lyric (index 0) so the spotlight highlights immediately upon loading/playing
-    let activeIdx = 0;
+    
+    // Shift the playhead by the offset calibration
+    const adjustedTime = Math.max(0, currentTime + lyricOffset);
+    
+    let activeIdx = 0; // Default to first lyric for instant spotlight visibility
     for (let i = 0; i < parsedLyrics.length; i++) {
-      if (currentTime >= parsedLyrics[i].time) {
+      if (adjustedTime >= parsedLyrics[i].time) {
         activeIdx = i;
       } else {
         break;
       }
     }
     return activeIdx;
-  }, [parsedLyrics, currentTime]);
+  }, [parsedLyrics, currentTime, lyricOffset]);
 
   // Handle song changed -> reset player
   useEffect(() => {
@@ -92,8 +84,17 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
     setIsBooted(false);
     setBooting(false);
     setBootLines([]);
+    setLyricOffset(0); // Reset calibration offset when song changes!
     setSysLogs(["[SYS] Integrated audio engine standby.", "[SYS] Signal source loaded."]);
   }, [songInfo]);
+
+  const handleShiftOffset = (amount) => {
+    setLyricOffset(prev => {
+      const next = prev + amount;
+      setSysLogs(prevLogs => [...prevLogs, `[SYS] Calibrator shifted to ${next >= 0 ? "+" : ""}${next.toFixed(1)}s`]);
+      return next;
+    });
+  };
 
   // Add random diagnostic logs at intervals when playing
   useEffect(() => {
@@ -417,6 +418,54 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
                 {/* Horizontal scanner light */}
                 <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent pointer-events-none select-none z-10 animate-scanline"></div>
                 {renderLyricsList()}
+              </div>
+
+              {/* Signal Calibration Subpanel (Hacking Terminal Theme) */}
+              <div className="flex items-center justify-between bg-[#050811]/60 px-3 py-1.5 rounded border border-purple-500/10 text-[10px] font-mono">
+                <div className="text-purple-400 font-bold uppercase tracking-wider flex items-center gap-1.5 select-none">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping shrink-0"></span>
+                  SIGNAL_CALIBRATION:
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleShiftOffset(-10)}
+                    className="px-1.5 py-0.5 rounded border border-purple-500/30 bg-purple-950/20 text-purple-300 hover:bg-purple-950/40 hover:text-white transition-all active:scale-95 text-[9px] font-bold"
+                    title="Shift lyrics 10s backward"
+                  >
+                    -10s
+                  </button>
+                  <button
+                    onClick={() => handleShiftOffset(-1)}
+                    className="px-1.5 py-0.5 rounded border border-purple-500/30 bg-purple-950/20 text-purple-300 hover:bg-purple-950/40 hover:text-white transition-all active:scale-95 text-[9px] font-bold"
+                    title="Shift lyrics 1s backward"
+                  >
+                    -1s
+                  </button>
+                  <span className="px-2 py-0.5 bg-black rounded text-cyan-400 font-bold tracking-wide border border-cyan-500/20 min-w-[55px] text-center shadow-[inset_0_0_6px_rgba(0,245,255,0.1)]">
+                    {lyricOffset >= 0 ? "+" : ""}{lyricOffset.toFixed(1)}s
+                  </span>
+                  <button
+                    onClick={() => handleShiftOffset(1)}
+                    className="px-1.5 py-0.5 rounded border border-purple-500/30 bg-purple-950/20 text-purple-300 hover:bg-purple-950/40 hover:text-white transition-all active:scale-95 text-[9px] font-bold"
+                    title="Shift lyrics 1s forward"
+                  >
+                    +1s
+                  </button>
+                  <button
+                    onClick={() => handleShiftOffset(10)}
+                    className="px-1.5 py-0.5 rounded border border-purple-500/30 bg-purple-950/20 text-purple-300 hover:bg-purple-950/40 hover:text-white transition-all active:scale-95 text-[9px] font-bold"
+                    title="Shift lyrics 10s forward"
+                  >
+                    +10s
+                  </button>
+                  <button
+                    onClick={() => setLyricOffset(0)}
+                    className="ml-1 px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 transition-all text-[9px] font-bold"
+                    title="Reset calibration to 0s"
+                  >
+                    RESET
+                  </button>
+                </div>
               </div>
 
               {/* Console Progress Bar & Time Registers */}
