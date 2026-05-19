@@ -301,8 +301,12 @@ app.post('/generate', upload.single('lrcFile'), async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log('===================================================');
-  console.log(`LYRICSHELL BACKEND LISTENING ON http://localhost:${PORT}`);
-  console.log('===================================================');
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log('===================================================');
+    console.log(`LYRICSHELL BACKEND LISTENING ON http://localhost:${PORT}`);
+    console.log('===================================================');
+  });
+}
+
+export default app;

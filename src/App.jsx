@@ -48,7 +48,7 @@ export default function App() {
     }
 
     try {
-      const resp = await fetch("http://localhost:4000/generate", {
+      const resp = await fetch("/generate", {
         method: "POST",
         body: formData,
       });

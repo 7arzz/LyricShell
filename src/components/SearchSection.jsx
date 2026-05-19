@@ -29,7 +29,7 @@ export default function SearchSection({ onSelect, selectedSong }) {
       setLoading(true);
       setError(null);
       try {
-        const resp = await fetch(`http://localhost:4000/api/search?q=${encodeURIComponent(debouncedQuery)}`);
+        const resp = await fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}`);
         if (!resp.ok) {
           throw new Error("Search request failed");
         }

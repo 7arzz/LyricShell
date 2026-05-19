@@ -17,6 +17,7 @@
     "express": "^4.19.2",
     "framer-motion": "^11.18.2",
     "lucide-react": "^1.16.0",
+    "multer": "^1.4.5-lts.1",
     "node-fetch": "^3.3.2",
     "postcss": "^8.4.31",
     "react": "^19.2.6",
