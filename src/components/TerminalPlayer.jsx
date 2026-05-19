@@ -482,11 +482,46 @@ export default function TerminalPlayer({ songInfo, lrcContent }) {
                 </div>
               </div>
 
-              {/* Scrolling Lyrics Subpanel */}
-              <div className="border border-purple-500/20 rounded bg-[#03060f]/80 p-3 min-h-[140px] flex flex-col justify-center relative overflow-hidden group/lyrics shadow-[inset_0_0_12px_rgba(0,0,0,0.8)]">
-                {/* Horizontal scanner light */}
-                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent pointer-events-none select-none z-10 animate-scanline"></div>
-                {renderLyricsList()}
+              {/* Scrolling Lyrics Subpanel — HACKER TERMINAL */}
+              <div className="relative rounded-sm overflow-hidden border border-green-500/30 shadow-[0_0_20px_rgba(74,222,128,0.08),inset_0_0_20px_rgba(0,0,0,0.9)]">
+                {/* Phosphor CRT scanlines */}
+                <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_3px,rgba(0,0,0,0.06)_3px,rgba(0,0,0,0.06)_4px)] pointer-events-none z-20" />
+                {/* Noise vignette */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_60%,rgba(0,0,0,0.5)_100%)] pointer-events-none z-20" />
+                {/* Moving scanline beam */}
+                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-green-400/25 to-transparent pointer-events-none select-none z-30 animate-scanline" />
+
+                {/* Terminal header bar */}
+                <div className="bg-black/70 border-b border-green-500/20 px-3 py-1 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_4px_#4ade80] animate-pulse" />
+                    <span className="text-green-500/80 text-[9px] font-mono uppercase tracking-widest select-none">
+                      LYRIC_STREAM :: kernel/audio/lrc.buf
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-green-700/60 text-[8px] font-mono tabular-nums select-none">
+                      PTR::{makeHexAddr(activeLyricIdx)}
+                    </span>
+                    <span className={`w-1.5 h-1.5 rounded-full ${isPlaying ? 'bg-green-400 animate-ping' : 'bg-green-900'}`} />
+                  </div>
+                </div>
+
+                {/* Lyric content */}
+                <div className="bg-[#010804]/95 p-3 min-h-[130px] flex flex-col justify-center">
+                  {renderLyricsList()}
+                </div>
+
+                {/* Terminal footer */}
+                <div className="bg-black/60 border-t border-green-500/10 px-3 py-0.5 flex items-center gap-2">
+                  <span className="text-green-700/50 text-[8px] font-mono select-none">root@lyricshell:~$</span>
+                  <span className="text-green-600/40 text-[8px] font-mono select-none flex-1 truncate">
+                    read /proc/{parsedLyrics.length > 0 ? parsedLyrics.length : '0'}_lines -- offset {lyricOffset >= 0 ? '+' : ''}{lyricOffset.toFixed(1)}s
+                  </span>
+                  <span className="text-green-800/50 text-[8px] font-mono select-none">
+                    [{activeLyricIdx + 1}/{parsedLyrics.length || 0}]
+                  </span>
+                </div>
               </div>
 
               {/* Signal Calibration Subpanel (Hacking Terminal Theme) */}
