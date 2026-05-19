@@ -466,10 +466,24 @@ app.post('/generate', upload.single('lrcFile'), async (req, res) => {
     
     // 1. Download preview MP3 → Base64
     let targetAudioUrl = previewUrl;
-    if (previewUrl.startsWith('/_/backend')) {
-      targetAudioUrl = `http://localhost:${PORT}${previewUrl.replace('/_/backend', '')}`;
-    } else if (previewUrl.startsWith('/')) {
-      targetAudioUrl = `http://localhost:${PORT}${previewUrl}`;
+
+    if (previewUrl.includes('url=')) {
+      // Direct CDN download via extracted parameter (prevents localhost ECONNREFUSED)
+      try {
+        const parsedUrl = new URL(previewUrl, 'http://localhost');
+        const extractedUrl = parsedUrl.searchParams.get('url');
+        if (extractedUrl) {
+          targetAudioUrl = extractedUrl;
+        }
+      } catch (e) {
+        console.error('[GENERATE] Failed to parse previewUrl search parameter:', e.message);
+      }
+    } else if (previewUrl.startsWith('/') || previewUrl.startsWith('http://localhost') || previewUrl.startsWith('http://127.0.0.1')) {
+      // Dynamic fallback to active request host/protocol
+      const host = req.get('host') || `localhost:${PORT}`;
+      const protocol = req.protocol || 'http';
+      const cleanPath = previewUrl.replace(/^\/_?\/backend/, '').replace(/^\//, '');
+      targetAudioUrl = `${protocol}://${host}/${cleanPath}`;
     }
 
     console.log(`[GENERATE] Downloading audio stream from:`, targetAudioUrl);
